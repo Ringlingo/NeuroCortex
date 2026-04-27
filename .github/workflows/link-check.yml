@@ -1,0 +1,91 @@
+name: Check Links
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install markdown-link-check
+      run: npm install -g markdown-link-check
+
+    - name: Check @ref: cross-domain references
+      run: |
+        echo "=== Checking @ref: cross-domain references ==="
+        ref_pattern='@ref:([^/]+)/([^ ]+)'
+        found_refs=()
+
+        while IFS= read -r file; do
+          while IFS= read -r line; do
+            if echo "$line" | grep -qE "$ref_pattern"; then
+              ref=$(echo "$line" | grep -oE "$ref_pattern")
+              domain=$(echo "$ref" | cut -d: -f2 | cut -d/ -f1)
+              entry=$(echo "$ref" | cut -d/ -f2)
+              target_file="domains/${domain}.md"
+
+              if [ -f "$target_file" ]; then
+                if grep -q "$entry" "$target_file" 2>/dev/null; then
+                  echo "✓ @ref:$domain/$entry → found"
+                else
+                  echo "✗ @ref:$domain/$entry → NOT FOUND in $target_file"
+                fi
+              else
+                echo "⚠ @ref:$domain/$entry → domain file not found: $target_file"
+              fi
+            fi
+          done < "$file"
+        done < <(find . -name "*.md" -type f)
+
+    - name: Check internal markdown links
+      run: |
+        echo "=== Checking internal Markdown links ==="
+        # Extract and check relative links between markdown files
+        for file in $(find . -name "*.md" -type f); do
+          while IFS= read -r line; do
+            # Check relative links to other markdown files
+            if echo "$line" | grep -qE '\]\(\.\./[^)]+\.md\)' || echo "$line" | grep -qE '\]\([^)]+\.md\)'; then
+              link=$(echo "$line" | grep -oE '\]\([^)]+\.md\)' | tr -d '](')
+              echo "Link in $file: $link"
+            fi
+          done < "$file"
+        done
+
+    - name: Check case file references in THINKKIT
+      run: |
+        echo "=== Checking THINKKIT case references ==="
+        if [ -f "brain/THINKKIT.md" ]; then
+          case_pattern='cases/([^.]+\.md)'
+
+          if grep -qE '\[案例\d?\].*cases/' "brain/THINKKIT.md"; then
+            while IFS= read -r line; do
+              if echo "$line" | grep -qE '\[案例\d?\].*cases/'; then
+                case_file=$(echo "$line" | grep -oE 'cases/[^)]+\.md' | tr -d ']')
+                if [ -f "brain/$case_file" ]; then
+                  echo "✓ $case_file exists"
+                else
+                  echo "✗ $case_file referenced but not found"
+                fi
+              fi
+            done < "brain/THINKKIT.md"
+          fi
+        fi
+
+    - name: Summary
+      run: |
+        echo ""
+        echo "=== Link Check Complete ==="
+        echo "Note: This is a basic check. For production, consider using a full"
+        echo "markdown-link-check tool or Lychee for comprehensive link validation."

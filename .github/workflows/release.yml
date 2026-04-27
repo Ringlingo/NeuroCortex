@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v2.2)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "RELEASE_NOTES=true" >> $GITHUB_OUTPUT
+
+    - name: Generate release notes
+      run: |
+        VERSION=${{ steps.version.outputs.VERSION }}
+        echo "=== Release Notes for $VERSION ==="
+        echo ""
+        echo "# $VERSION"
+        echo ""
+        echo "## What's Changed"
+        echo ""
+        git log --oneline "main"..."HEAD" 2>/dev/null || git log --oneline -10
+        echo ""
+        echo "## Files Changed"
+        echo ""
+        git diff --name-status HEAD~10 HEAD 2>/dev/null || git diff --name-status -10
+        echo ""
+        echo "## New Contributors"
+        echo "Mention any new contributors here"
+
+    - name: Create ZIP archive
+      run: |
+        VERSION=${{ steps.version.outputs.VERSION }}
+        ARCHIVE_NAME="NeuroCortex-${VERSION}"
+
+        echo "=== Creating Archive: $ARCHIVE_NAME ==="
+
+        # Create archive excluding .git and unnecessary files
+        zip -r "$ARCHIVE_NAME.zip" . \
+          -x ".git/*" \
+          -x "node_modules/*" \
+          -x ".DS_Store" \
+          -x "*.log" \
+          -x ".env*" \
+          -x "*.tmp"
+
+        # Create tar.gz as alternative
+        tar -czvf "$ARCHIVE_NAME.tar.gz" . \
+          --exclude=".git" \
+          --exclude="node_modules" \
+          --exclude="*.log" \
+          --exclude=".DS_Store"
+
+        echo ""
+        echo "=== Archive Contents ==="
+        unzip -l "$ARCHIVE_NAME.zip" | head -30
+
+        ls -lh "$ARCHIVE_NAME.zip" "$ARCHIVE_NAME.tar.gz"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          NeuroCortex-*.zip
+          NeuroCortex-*.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Summary
+      run: |
+        VERSION=${{ steps.version.outputs.VERSION }}
+        echo "=== Release $VERSION Complete ==="
+        echo ""
+        echo "📦 Archives created:"
+        echo "   - NeuroCortex-$VERSION.zip"
+        echo "   - NeuroCortex-$VERSION.tar.gz"
+        echo ""
+        echo "🔗 Release published at:"
+        echo "   ${{ github.server_url }}/${{ github.repository }}/releases/tag/$VERSION"
+
+  # Optional: Publish to package registries
+  publish:
+    runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Create Python package (optional)
+      run: |
+        echo "=== Optional: PyPI Publish ==="
+        echo "To publish to PyPI, add these secrets:"
+        echo "- PYPI_API_TOKEN"
+        echo ""
+        echo "And uncomment this section with:"
+        echo "- pip install twine"
+        echo "- twine upload dist/*"
+        echo ""
+        echo "For now, the release artifacts are available for manual download."
+
+    - name: Update GitHub Pages (optional)
+      run: |
+        echo "=== Optional: GitHub Pages Update ==="
+        echo "To deploy documentation to GitHub Pages, add a deploy step:"
+        echo "- uses: peaceiris/actions-gh-pages@v3"
+        echo "  with:"
+        echo "    github_token: \${{ secrets.GITHUB_TOKEN }}"
+        echo "    publish_dir: ./docs"

@@ -60,9 +60,18 @@ NeuroCortex/
 │       ├── 逆向思维_案例2.md
 │       ├── 类比迁移_案例1.md
 │       └── 魔鬼代言人_案例1.md
+├── contrib/                       # 🌍 社区域库 Community domain library
+│   └── domains/
+│       ├── README.md           #   贡献指南
+│       ├── TEMPLATE.md         #   域文件模板
+│       └── examples/            #   示例域
 ├── domains/                      # 📦 可扩展知识域 Extensible knowledge domains
 │   └── example.md               #   域文件模板 Domain template
 ├── .github/workflows/            # ⚙️ GitHub Actions
+│   ├── ci.yml                  #   自动检查（lint + 结构验证）
+│   ├── link-check.yml           #   交叉引用检查
+│   └── release.yml              #   自动化发布
+├── TUTORIAL.md                  # 🧪 实战教程
 ├── IMPROVE.md                    # 🔍 自我优化建议 Self-optimization suggestions
 ├── ONBOARDING.md                 # 🎯 交互式启动向导 Interactive onboarding guide
 └── README.md
@@ -233,6 +242,32 @@ HR-004: 绝不在共享日志中写入私人信息
 HR-005: 绝不确定时必须明说
         Always state when uncertain
 ```
+
+---
+
+## 📚 文档 / Documentation
+
+| 文档 | 说明 |
+|------|------|
+| [TUTORIAL.md](./TUTORIAL.md) | 实战教程，对比展示框架价值 |
+| [ONBOARDING.md](./ONBOARDING.md) | 交互式启动向导，10分钟生成配置 |
+| [IMPROVE.md](./IMPROVE.md) | 自我优化建议、模糊点、风险预警 |
+
+---
+
+## 🌍 社区域库 / Community Domains
+
+欢迎贡献垂直领域域文件！
+
+```bash
+contrib/
+└── domains/
+    ├── README.md       # 贡献指南
+    ├── TEMPLATE.md     # 域文件模板
+    └── examples/       # 示例域
+```
+
+详见 [contrib/domains/README.md](./contrib/domains/README.md)
 
 ---
 
