@@ -253,11 +253,6 @@ HR-005: 绝不确定时必须明说
 ⭐ **如果 NeuroCortex 让你的 AI 变聪明了，请给个 Star 支持一下**
 *If NeuroCortex makes your AI smarter, please give it a Star*
 
-🗺️ **下个版本 v2.3 计划 / v2.3 Roadmap**：
-- 跨域知识图谱可视化 / Cross-domain knowledge graph visualization
-- 一键导出直觉规则热力图 / One-click intuition rule heatmap export
-- ONBOARDING.md 中文语音引导版 / ONBOARDING voice guide
-
 ---
 
 *"让 AI 拥有更好思考方式的框架"*
